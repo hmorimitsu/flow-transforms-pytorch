@@ -48,3 +48,13 @@ def test_cuda(images_list, flows_list):
         images, flows = c(images_list, flows_list)
         assert images.is_cuda
         assert flows.is_cuda
+
+
+def test_cuda(images_list, flows_list):
+    if torch.cuda.is_available:
+        c = base_compose_tranform(True, True)
+        images, flows = c(images_list, flows_list)
+        assert images.is_cuda
+        assert flows.is_cuda
+        assert images.dtype == torch.float16
+        assert flows.dtype == torch.float16
