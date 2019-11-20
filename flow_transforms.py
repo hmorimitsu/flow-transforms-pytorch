@@ -106,6 +106,32 @@ class Compose(BaseTransform):
         return images, flows
 
 
+class CenterCrop(BaseTransform):
+    """ Crops a regions in the center of the image according to the given size.
+
+    Args:
+        size: Tuple[int, int]:
+            The size (height, width) of the region to be cropped.
+    """
+    def __init__(self,
+                 size: Tuple[int, int]) -> None:
+        self.size = size
+
+    def __call__(self,
+                 images: torch.Tensor,
+                 flows: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        _, _, h, w = images.shape
+        th, tw = self.size
+        if w == tw and h == th:
+            return images, flows
+
+        x1 = (w - tw) // 2
+        y1 = (h - th) // 2
+        images = images[:, :, y1:y1+th, x1:x1+tw]
+        flows = flows[:, :, y1:y1+th, x1:x1+tw]
+        return images, flows
+
+
 class RandomHorizontalFlip(BaseTransform):
     """ Randomly flips the entire batch horizontally with a probability of 0.5.
     """
