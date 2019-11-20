@@ -43,7 +43,8 @@ def test_basic_compose(images_list, flows_list):
 
 
 def test_cuda(images_list, flows_list):
-    c = base_compose_tranform(False, True)
-    images, flows = c(images_list, flows_list)
-    assert images.is_cuda
-    assert flows.is_cuda
+    if torch.cuda.is_available:
+        c = base_compose_tranform(False, True)
+        images, flows = c(images_list, flows_list)
+        assert images.is_cuda
+        assert flows.is_cuda
