@@ -183,6 +183,7 @@ class RandomAdditiveColor(BaseTransform):
         else:
             add_vals = torch.normal(0.0, self.stdev, [1])
             add_vals = add_vals.repeat(images.shape[0])
+        add_vals = add_vals.type(images.dtype)
         if images.is_cuda:
             add_vals = add_vals.cuda()
         add_vals = add_vals.reshape(-1, 1, 1, 1)
@@ -220,6 +221,7 @@ class RandomMultiplicativeColor(BaseTransform):
         else:
             mult_vals = torch.rand([1])
             mult_vals = mult_vals.repeat(images.shape[0])
+        mult_vals = mult_vals.type(images.dtype)
         if images.is_cuda:
             mult_vals = mult_vals.cuda()
         mult_vals *= self.interval
@@ -268,6 +270,7 @@ class RandomGammaColor(BaseTransform):
         else:
             expo_vals = torch.rand([1])
             expo_vals = expo_vals.repeat(images.shape[0])
+        expo_vals = expo_vals.type(images.dtype)
         if images.is_cuda:
             expo_vals = expo_vals.cuda()
         expo_vals *= self.interval
@@ -296,6 +299,7 @@ class AddGaussianNoise(BaseTransform):
                  images: torch.Tensor,
                  flows: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         noise = torch.normal(0.0, self.stdev, images.shape)
+        noise = noise.type(images.dtype)
         if images.is_cuda:
             noise = noise.cuda()
         images += noise
@@ -322,6 +326,7 @@ class RandomScale(BaseTransform):
                  images: torch.Tensor,
                  flows: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         scale = torch.rand([1])
+        scale = scale.type(flows.dtype)
         if images.is_cuda:
             scale = scale.cuda()
         scale *= self.interval
