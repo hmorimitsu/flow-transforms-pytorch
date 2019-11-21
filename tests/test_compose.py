@@ -6,9 +6,9 @@ from tests.base import (
 import flow_transforms
 
 
-def base_compose_tranform(fp16, cuda):
+def base_compose_tranform(fp16, device):
     transform = flow_transforms.Compose([
-        flow_transforms.ToTensor(fp16=fp16, cuda=cuda),
+        flow_transforms.ToTensor(fp16=fp16, device=device),
         flow_transforms.RandomTranslate((10, 10)),
         flow_transforms.RandomRotate(10, 10),
         flow_transforms.RandomScale(0.9, 1.1),
@@ -44,7 +44,7 @@ def test_basic_compose(images_list, flows_list):
 
 def test_cuda(images_list, flows_list):
     if torch.cuda.is_available:
-        c = base_compose_tranform(False, True)
+        c = base_compose_tranform(False, 'cuda')
         images, flows = c(images_list, flows_list)
         assert images.is_cuda
         assert flows.is_cuda
@@ -52,7 +52,7 @@ def test_cuda(images_list, flows_list):
 
 def test_cuda(images_list, flows_list):
     if torch.cuda.is_available:
-        c = base_compose_tranform(True, True)
+        c = base_compose_tranform(True, 'cuda')
         images, flows = c(images_list, flows_list)
         assert images.is_cuda
         assert flows.is_cuda

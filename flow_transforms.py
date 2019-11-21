@@ -46,20 +46,18 @@ class ToTensor(BaseTransform):
             have the channels first or last.
         fp16: bool: optional, default False
             If True, the tensors use have-precision floating point.
-        cuda: bool: optional, default False
-            If True, the tensors are put into the GPU for further operations.
-            It is not recommended to set this as True, as it may require a
-            large amount of GPU memory and processing.
+        device: str or torch.device: optional, default 'cpu'
+            Name of the torch device where the tensors will be put in.
     """
     def __init__(self,
                  images_order: str = 'HWC',
                  flows_order: str = 'HWC',
                  fp16: bool = False,
-                 cuda: bool = False) -> None:
+                 device: Any = 'cpu') -> None:
         self.images_order = images_order.upper()
         self.flows_order = flows_order.upper()
         self.fp16 = fp16
-        self.cuda = cuda
+        self.device = device
 
     def __call__(self,
                  images: Any,
@@ -80,9 +78,8 @@ class ToTensor(BaseTransform):
         else:
             images = images.float()
             flows = flows.float()
-        if self.cuda:
-            images = images.cuda()
-            flows = flows.cuda()
+        images = images.to(device=self.device)
+        flows = flows.to(device=self.device)
         return images, flows
 
 
@@ -184,8 +181,7 @@ class RandomAdditiveColor(BaseTransform):
             add_vals = torch.normal(0.0, self.stdev, [1])
             add_vals = add_vals.repeat(images.shape[0])
         add_vals = add_vals.type(images.dtype)
-        if images.is_cuda:
-            add_vals = add_vals.cuda()
+        add_vals = add_vals.to(images.device)
         add_vals = add_vals.reshape(-1, 1, 1, 1)
         images += add_vals
         return images, flows
@@ -222,8 +218,7 @@ class RandomMultiplicativeColor(BaseTransform):
             mult_vals = torch.rand([1])
             mult_vals = mult_vals.repeat(images.shape[0])
         mult_vals = mult_vals.type(images.dtype)
-        if images.is_cuda:
-            mult_vals = mult_vals.cuda()
+        mult_vals = mult_vals.to(images.device)
         mult_vals *= self.interval
         mult_vals += self.range_min
         mult_vals = mult_vals.reshape(-1, 1, 1, 1)
@@ -271,8 +266,7 @@ class RandomGammaColor(BaseTransform):
             expo_vals = torch.rand([1])
             expo_vals = expo_vals.repeat(images.shape[0])
         expo_vals = expo_vals.type(images.dtype)
-        if images.is_cuda:
-            expo_vals = expo_vals.cuda()
+        expo_vals = expo_vals.to(images.device)
         expo_vals *= self.interval
         expo_vals += self.range_min
         expo_vals = torch.pow(expo_vals, -1.0)
@@ -300,8 +294,7 @@ class AddGaussianNoise(BaseTransform):
                  flows: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         noise = torch.normal(0.0, self.stdev, images.shape)
         noise = noise.type(images.dtype)
-        if images.is_cuda:
-            noise = noise.cuda()
+        noise = noise.to(images.device)
         images += noise
         return images, flows
 
@@ -327,8 +320,7 @@ class RandomScale(BaseTransform):
                  flows: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         scale = torch.rand([1])
         scale = scale.type(flows.dtype)
-        if images.is_cuda:
-            scale = scale.cuda()
+        scale = scale.to(flows.device)
         scale *= self.interval
         scale += self.range_min
         new_size = (int(scale*images.shape[2]), int(scale*images.shape[3]))
@@ -444,9 +436,8 @@ class RandomRotate(BaseTransform):
             vy, vx = torch.meshgrid(torch.arange(h), torch.arange(w))
             vx = vx.type(flows.dtype)
             vy = vy.type(flows.dtype)
-            if flows.is_cuda:
-                vx = vx.cuda()
-                vy = vy.cuda()
+            vx = vx.to(flows.device)
+            vy = vy.to(flows.device)
             vx -= (w-1.0)/2.0
             vy -= (h-1.0)/2.0
             angle_rad = rot_angle*2*np.pi / 360
@@ -462,9 +453,8 @@ class RandomRotate(BaseTransform):
             vx, vy = torch.meshgrid(torch.arange(h), torch.arange(w))
             vx = vx.type(flows.dtype)
             vy = vy.type(flows.dtype)
-            if flows.is_cuda:
-                vx = vx.cuda()
-                vy = vy.cuda()
+            vx = vx.to(flows.device)
+            vy = vy.to(flows.device)
             rotx = (vx - h/2.0) * (rot_angle*np.pi/180.0)
             roty = -(vy - w/2.0) * (rot_angle*np.pi/180.0)
             rot_mat = torch.stack((rotx, roty), dim=0)[None]

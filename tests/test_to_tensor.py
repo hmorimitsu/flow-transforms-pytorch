@@ -11,10 +11,10 @@ def basic_checks(input_images,
                  images_order='HWC',
                  flows_order='HWC',
                  fp16=False,
-                 cuda=False,
+                 device='cpu',
                  tolerance=1e-8):
     tt = ToTensor(
-        images_order, flows_order, fp16, cuda)
+        images_order, flows_order, fp16, device)
     images, flows = tt(input_images, input_flows)
     assert isinstance(images, torch.Tensor)
     assert isinstance(flows, torch.Tensor)
@@ -37,9 +37,9 @@ def basic_checks(input_images,
 
 def test_cuda(images_list, flows_list):
     if torch.cuda.is_available:
-        basic_checks(images_list, flows_list, cuda=True)
+        basic_checks(images_list, flows_list, device='cuda')
         basic_checks(
-            images_list, flows_list, fp16=True, cuda=True, tolerance=1e-3)
+            images_list, flows_list, fp16=True, device='cuda', tolerance=1e-3)
 
 
 def test_fp16(images_list, flows_list):
