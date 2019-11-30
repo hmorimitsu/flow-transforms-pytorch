@@ -27,8 +27,8 @@ to have a shape [N, C, H, W], where:
 class BaseTransform(object):
     @abstractmethod
     def __call__(self,
-                 images,
-                 flows):
+                 images: Any,
+                 flows: Any) -> Tuple[Any, Any]:
         pass
 
 
@@ -100,6 +100,37 @@ class Compose(BaseTransform):
                  flows: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         for t in self.transforms_list:
             images, flows = t(images, flows)
+        return images, flows
+
+
+class Normalize(BaseTransform):
+    """ Normalizes the images according to the equation:
+    images = (images - means) / stdevs.
+
+    Args:
+        means: Sequence[float]:
+            A list with the values of the means of each of the channels of the
+            image.
+        stdevs: Sequence[float]:
+            A list with the values of the standard deviations of each of the
+            channels of the image.
+    """
+    def __init__(self,
+                 means: Sequence[float],
+                 stdevs: Sequence[float]) -> None:
+        self.means = torch.from_numpy(np.array(means)).reshape(1, -1, 1, 1)
+        self.stdevs = torch.from_numpy(np.array(stdevs)).reshape(1, -1, 1, 1)
+        self.has_converted = False
+
+    def __call__(self,
+                 images: torch.Tensor,
+                 flows: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        if not self.has_converted:
+            self.means = self.means.type(images.dtype).to(images.device)
+            self.stdevs = self.stdevs.type(images.dtype).to(images.device)
+            self.has_converted = True
+        images -= self.means
+        images /= self.stdevs
         return images, flows
 
 
