@@ -9,6 +9,7 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
+import warnings
 from abc import abstractmethod
 from typing import Any, Sequence, Tuple
 
@@ -134,8 +135,79 @@ class Normalize(BaseTransform):
         return images, flows
 
 
+class Crop(BaseTransform):
+    """ Crops a region at the given position of the image according to the
+    given size.
+
+    Args:
+        coordinates: Tuple[int, int]:
+            The (y, x) position of the origin of the crop. The coordinates
+            values depend on the choice of the parameters is_center. If
+            is_center == True, then coordinates should be the center point of
+            the region to be cropped. Otherwise, it should be the top-left
+            corner of the region.
+        size: Tuple[int, int]:
+            The size (height, width) of the region to be cropped.
+        is_center: bool: optional, default True
+            Determines how the coordinates will be used. See the comments about
+            coordinates.
+    """
+    def __init__(self,
+                 coordinates: Tuple[int, int],
+                 size: Tuple[int, int],
+                 is_center: bool = True) -> None:
+        y, x = coordinates
+        assert y >= 0 and x >= 0, 'The coordinates must be positive.'
+        h, w = size
+        assert h > 0 and w > 0, 'The size must be larger than zero.'
+        self.coordinates = coordinates
+        self.size = size
+        self.is_center = is_center
+
+    def __call__(self,
+                 images: torch.Tensor,
+                 flows: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        _, _, h, w = images.shape
+        ch, cw = self.size
+        cy, cx = self.coordinates
+        if self.is_center:
+            ch2 = ch // 2
+            cw2 = cw // 2
+            y1 = cy - ch2
+            x1 = cx - cw2
+            y2 = cy + ch - ch2
+            x2 = cx + cw - cw2
+        else:
+            y1 = cy
+            x1 = cx
+            y2 = y1 + ch
+            x2 = x1 + cw
+        if y1 < 0:
+            warnings.warn('y1 < 0 when cropping. It will be set as y1 = 0.',
+                          RuntimeWarning)
+            y1 = 0
+        if x1 < 0:
+            warnings.warn('x1 < 0 when cropping. It will be set as x1 = 0.',
+                          RuntimeWarning)
+            x1 = 0
+        if y2 > h:
+            warnings.warn(
+                'y2 > image_height when cropping. '
+                'It will be set as y2 = image_height.', RuntimeWarning)
+            y2 = h
+        if x2 > w:
+            warnings.warn(
+                'x2 > image_width when cropping. '
+                'It will be set as x2 = image_width.', RuntimeWarning)
+            x2 = w
+        images = images[:, :, y1:y2, x1:x2]
+        flows = flows[:, :, y1:y2, x1:x2]
+        return images, flows
+
+
+
 class CenterCrop(BaseTransform):
-    """ Crops a regions in the center of the image according to the given size.
+    """ Crops a region in the center of the image according to the given size.
 
     Args:
         size: Tuple[int, int]:
