@@ -232,6 +232,31 @@ class CenterCrop(BaseTransform):
         return images, flows
 
 
+class Scale(BaseTransform):
+    """ Rescale the inputs to a new given size.
+
+    Args:
+        size: Tuple[int, int]:
+            The new size (height, width) of the inputs.
+    """
+    def __init__(self,
+                 size: Tuple[int, int]) -> None:
+        self.size = size
+
+    def __call__(self,
+                 images: torch.Tensor,
+                 flows: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        yscale = float(self.size[0]) / images.shape[2]
+        xscale = float(self.size[1]) / images.shape[3]
+        images = F.interpolate(
+            images, size=self.size, mode='bilinear', align_corners=False)
+        flows = F.interpolate(
+            flows, size=self.size, mode='bilinear', align_corners=False)
+        flows[:, 0] *= yscale
+        flows[:, 1] *= xscale
+        return images, flows
+
+
 class RandomHorizontalFlip(BaseTransform):
     """ Randomly flips the entire batch horizontally with a probability of 0.5.
     """
