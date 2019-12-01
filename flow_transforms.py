@@ -232,8 +232,8 @@ class CenterCrop(BaseTransform):
         return images, flows
 
 
-class Scale(BaseTransform):
-    """ Rescale the inputs to a new given size.
+class Resize(BaseTransform):
+    """ Resizes the inputs to a new given size.
 
     Args:
         size: Tuple[int, int]:
